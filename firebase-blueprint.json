@@ -1,0 +1,316 @@
+{
+  "entities": {
+    "AdminRecord": {
+      "title": "AdminRecord",
+      "description": "Authorized laboratory administrator record",
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$",
+          "description": "Firebase Auth UID of the administrator"
+        },
+        "email": {
+          "type": "string",
+          "minLength": 5,
+          "maxLength": 160,
+          "format": "email",
+          "description": "Verified email address of the administrator"
+        },
+        "role": {
+          "type": "string",
+          "enum": ["admin"],
+          "minLength": 5,
+          "maxLength": 10,
+          "description": "Fixed administrator role identifier"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp when admin was registered"
+        }
+      },
+      "required": ["uid", "email", "role", "createdAt"]
+    },
+    "LabResult": {
+      "title": "LabResult",
+      "description": "Publicly queryable clinical analysis status and report metadata keyed by unique analysis code, isolated from patient contact PII",
+      "type": "object",
+      "properties": {
+        "analysisCode": {
+          "type": "string",
+          "minLength": 9,
+          "maxLength": 32,
+          "pattern": "^LAB-[0-9]{4}-[0-9]{3,6}$",
+          "description": "Unique analysis code (e.g., LAB-2026-889)"
+        },
+        "patientName": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 120,
+          "description": "Patient full name in Arabic or English"
+        },
+        "testName": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 160,
+          "description": "Name of the diagnostic lab test (e.g., Complete Blood Count - CBC)"
+        },
+        "testCategory": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 80,
+          "description": "Clinical department or category of the test"
+        },
+        "testDate": {
+          "type": "string",
+          "minLength": 4,
+          "maxLength": 40,
+          "description": "Date of sample collection"
+        },
+        "status": {
+          "type": "string",
+          "enum": ["ready", "pending"],
+          "minLength": 5,
+          "maxLength": 10,
+          "description": "Current report readiness status"
+        },
+        "estimatedCompletion": {
+          "type": "string",
+          "minLength": 0,
+          "maxLength": 120,
+          "description": "Estimated completion timeframe when status is pending"
+        },
+        "pdfDataUrl": {
+          "type": "string",
+          "minLength": 0,
+          "maxLength": 950000,
+          "description": "Uploaded PDF data URI or report URL when status is ready"
+        },
+        "pdfFileName": {
+          "type": "string",
+          "minLength": 0,
+          "maxLength": 120,
+          "description": "Original filename of the attached PDF report"
+        },
+        "clinicalSummary": {
+          "type": "string",
+          "minLength": 0,
+          "maxLength": 600,
+          "description": "Key clinical parameters or notes included in the official report"
+        },
+        "createdBy": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$",
+          "description": "UID of the lab administrator who registered the test"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp of record creation"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp of last status or report update"
+        }
+      },
+      "required": [
+        "analysisCode",
+        "patientName",
+        "testName",
+        "testCategory",
+        "testDate",
+        "status",
+        "estimatedCompletion",
+        "pdfDataUrl",
+        "pdfFileName",
+        "clinicalSummary",
+        "createdBy",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "ResultContactPII": {
+      "title": "ResultContactPII",
+      "description": "Strictly isolated patient contact PII (phone number and internal staff notes) accessible only to lab administrators for WhatsApp result dispatch",
+      "type": "object",
+      "properties": {
+        "analysisCode": {
+          "type": "string",
+          "minLength": 9,
+          "maxLength": 32,
+          "pattern": "^LAB-[0-9]{4}-[0-9]{3,6}$",
+          "description": "Matching analysis code in /results/{analysisCode}"
+        },
+        "patientPhone": {
+          "type": "string",
+          "minLength": 8,
+          "maxLength": 25,
+          "description": "Patient phone number for WhatsApp notification"
+        },
+        "notes": {
+          "type": "string",
+          "minLength": 0,
+          "maxLength": 300,
+          "description": "Internal lab staff notes"
+        },
+        "createdBy": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$",
+          "description": "UID of the lab administrator who created the contact record"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp of creation"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp of last update"
+        }
+      },
+      "required": [
+        "analysisCode",
+        "patientPhone",
+        "notes",
+        "createdBy",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "HomeCollectionRequest": {
+      "title": "HomeCollectionRequest",
+      "description": "Home phlebotomy sample collection booking in Mansoura containing patient PII and optional prescription attachment",
+      "type": "object",
+      "properties": {
+        "requestId": {
+          "type": "string",
+          "minLength": 4,
+          "maxLength": 64,
+          "pattern": "^[a-zA-Z0-9_\\-]+$",
+          "description": "Unique booking request identifier"
+        },
+        "requesterId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$",
+          "description": "Authenticated user UID of the requester"
+        },
+        "patientName": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 120,
+          "description": "Patient full name"
+        },
+        "phone": {
+          "type": "string",
+          "minLength": 8,
+          "maxLength": 25,
+          "description": "Patient mobile phone number"
+        },
+        "address": {
+          "type": "string",
+          "minLength": 5,
+          "maxLength": 300,
+          "description": "Detailed street and building address in Mansoura"
+        },
+        "district": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 80,
+          "description": "Area or neighborhood in Mansoura (e.g., المشاية السفلية, شارع الجمهورية, توريل)"
+        },
+        "preferredDate": {
+          "type": "string",
+          "minLength": 4,
+          "maxLength": 40,
+          "description": "Requested visit date"
+        },
+        "preferredTimeSlot": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 60,
+          "description": "Requested visit time window"
+        },
+        "notes": {
+          "type": "string",
+          "minLength": 0,
+          "maxLength": 500,
+          "description": "Required tests or special instructions"
+        },
+        "prescriptionDataUrl": {
+          "type": "string",
+          "minLength": 0,
+          "maxLength": 850000,
+          "description": "Optional uploaded prescription (Rosheta) image data URL"
+        },
+        "prescriptionFileName": {
+          "type": "string",
+          "minLength": 0,
+          "maxLength": 120,
+          "description": "Original filename of the prescription image"
+        },
+        "status": {
+          "type": "string",
+          "enum": ["new", "confirmed", "completed", "cancelled"],
+          "minLength": 3,
+          "maxLength": 12,
+          "description": "Booking lifecycle status"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp of booking submission"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp of last status update"
+        }
+      },
+      "required": [
+        "requestId",
+        "requesterId",
+        "patientName",
+        "phone",
+        "address",
+        "district",
+        "preferredDate",
+        "preferredTimeSlot",
+        "notes",
+        "prescriptionDataUrl",
+        "prescriptionFileName",
+        "status",
+        "createdAt",
+        "updatedAt"
+      ]
+    }
+  },
+  "firestore": {
+    "/admins/{adminId}": {
+      "schema": { "$ref": "#/entities/AdminRecord" },
+      "description": "Trusted laboratory administrator registry"
+    },
+    "/results/{analysisCode}": {
+      "schema": { "$ref": "#/entities/LabResult" },
+      "description": "Patient test results indexed by unique Analysis Code (LAB-YYYY-NNN)"
+    },
+    "/result_contacts/{analysisCode}": {
+      "schema": { "$ref": "#/entities/ResultContactPII" },
+      "description": "Isolated patient phone and staff notes for each Analysis Code, restricted strictly to admins"
+    },
+    "/home_requests/{requestId}": {
+      "schema": { "$ref": "#/entities/HomeCollectionRequest" },
+      "description": "Home sample collection requests in Mansoura, restricted to the owner or lab admins"
+    }
+  }
+}

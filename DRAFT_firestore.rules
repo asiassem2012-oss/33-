@@ -1,0 +1,267 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // 1. Global Safety Net (Default-Deny Catch-All)
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // 2. Hardened Global Primitives
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function isValidAnalysisCode(code) {
+      return code is string && code.size() >= 9 && code.size() <= 32 && code.matches('^LAB-[0-9]{4}-[0-9]{3,6}$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isVerifiedUser() {
+      return isSignedIn() && request.auth.token.email_verified == true;
+    }
+
+    function isAdmin() {
+      return isVerifiedUser() && (
+        request.auth.token.email == 'asiassem2012@gmail.com' ||
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid))
+      );
+    }
+
+    // 3. Entity Validation Blueprints (Anti-Update-Gap)
+    function isValidAdminRecord(data) {
+      return data.keys().hasAll(['uid', 'email', 'role', 'createdAt']) &&
+        data.keys().hasOnly(['uid', 'email', 'role', 'createdAt']) &&
+        data.uid is string && data.uid.size() >= 1 && data.uid.size() <= 128 && data.uid.matches('^[a-zA-Z0-9_\\-]+$') &&
+        data.email is string && data.email.size() >= 5 && data.email.size() <= 160 &&
+        data.role is string && data.role.size() == 5 && data.role == 'admin' &&
+        data.createdAt is timestamp;
+    }
+
+    function isValidLabResult(data) {
+      return data.keys().hasAll([
+          'analysisCode',
+          'patientName',
+          'testName',
+          'testCategory',
+          'testDate',
+          'status',
+          'estimatedCompletion',
+          'pdfDataUrl',
+          'pdfFileName',
+          'clinicalSummary',
+          'createdBy',
+          'createdAt',
+          'updatedAt'
+        ]) &&
+        data.keys().hasOnly([
+          'analysisCode',
+          'patientName',
+          'testName',
+          'testCategory',
+          'testDate',
+          'status',
+          'estimatedCompletion',
+          'pdfDataUrl',
+          'pdfFileName',
+          'clinicalSummary',
+          'createdBy',
+          'createdAt',
+          'updatedAt'
+        ]) &&
+        isValidAnalysisCode(data.analysisCode) &&
+        data.patientName is string && data.patientName.size() >= 2 && data.patientName.size() <= 120 &&
+        data.testName is string && data.testName.size() >= 2 && data.testName.size() <= 160 &&
+        data.testCategory is string && data.testCategory.size() >= 2 && data.testCategory.size() <= 80 &&
+        data.testDate is string && data.testDate.size() >= 4 && data.testDate.size() <= 40 &&
+        data.status is string && data.status.size() >= 5 && data.status.size() <= 10 && data.status in ['ready', 'pending'] &&
+        data.estimatedCompletion is string && data.estimatedCompletion.size() <= 120 &&
+        data.pdfDataUrl is string && data.pdfDataUrl.size() <= 950000 &&
+        data.pdfFileName is string && data.pdfFileName.size() <= 120 &&
+        data.clinicalSummary is string && data.clinicalSummary.size() <= 600 &&
+        data.createdBy is string && data.createdBy.size() >= 1 && data.createdBy.size() <= 128 && data.createdBy.matches('^[a-zA-Z0-9_\\-]+$') &&
+        data.createdAt is timestamp &&
+        data.updatedAt is timestamp;
+    }
+
+    function isValidResultContact(data) {
+      return data.keys().hasAll([
+          'analysisCode',
+          'patientPhone',
+          'notes',
+          'createdBy',
+          'createdAt',
+          'updatedAt'
+        ]) &&
+        data.keys().hasOnly([
+          'analysisCode',
+          'patientPhone',
+          'notes',
+          'createdBy',
+          'createdAt',
+          'updatedAt'
+        ]) &&
+        isValidAnalysisCode(data.analysisCode) &&
+        data.patientPhone is string && data.patientPhone.size() >= 8 && data.patientPhone.size() <= 25 &&
+        data.notes is string && data.notes.size() <= 300 &&
+        data.createdBy is string && data.createdBy.size() >= 1 && data.createdBy.size() <= 128 && data.createdBy.matches('^[a-zA-Z0-9_\\-]+$') &&
+        data.createdAt is timestamp &&
+        data.updatedAt is timestamp;
+    }
+
+    function isValidHomeRequest(data) {
+      return data.keys().hasAll([
+          'requestId',
+          'requesterId',
+          'patientName',
+          'phone',
+          'address',
+          'district',
+          'preferredDate',
+          'preferredTimeSlot',
+          'notes',
+          'prescriptionDataUrl',
+          'prescriptionFileName',
+          'status',
+          'createdAt',
+          'updatedAt'
+        ]) &&
+        data.keys().hasOnly([
+          'requestId',
+          'requesterId',
+          'patientName',
+          'phone',
+          'address',
+          'district',
+          'preferredDate',
+          'preferredTimeSlot',
+          'notes',
+          'prescriptionDataUrl',
+          'prescriptionFileName',
+          'status',
+          'createdAt',
+          'updatedAt'
+        ]) &&
+        isValidId(data.requestId) &&
+        data.requesterId is string && data.requesterId.size() >= 1 && data.requesterId.size() <= 128 && data.requesterId.matches('^[a-zA-Z0-9_\\-]+$') &&
+        data.patientName is string && data.patientName.size() >= 2 && data.patientName.size() <= 120 &&
+        data.phone is string && data.phone.size() >= 8 && data.phone.size() <= 25 &&
+        data.address is string && data.address.size() >= 5 && data.address.size() <= 300 &&
+        data.district is string && data.district.size() >= 2 && data.district.size() <= 80 &&
+        data.preferredDate is string && data.preferredDate.size() >= 4 && data.preferredDate.size() <= 40 &&
+        data.preferredTimeSlot is string && data.preferredTimeSlot.size() >= 2 && data.preferredTimeSlot.size() <= 60 &&
+        data.notes is string && data.notes.size() <= 500 &&
+        data.prescriptionDataUrl is string && data.prescriptionDataUrl.size() <= 850000 &&
+        data.prescriptionFileName is string && data.prescriptionFileName.size() <= 120 &&
+        data.status is string && data.status.size() >= 3 && data.status.size() <= 12 && data.status in ['new', 'confirmed', 'completed', 'cancelled'] &&
+        data.createdAt is timestamp &&
+        data.updatedAt is timestamp;
+    }
+
+    // 4. Collection Rules
+
+    // A. Administrators Registry
+    match /admins/{adminId} {
+      allow get: if isVerifiedUser() && isValidId(adminId) && (request.auth.uid == adminId || isAdmin());
+      allow list: if isAdmin();
+      allow create: if isAdmin() && isValidId(adminId) && isValidAdminRecord(incoming()) &&
+        incoming().uid == adminId &&
+        incoming().createdAt == request.time;
+      allow update, delete: if false;
+    }
+
+    // B. Clinical Analysis Results (Public single-doc lookup by exact code; no contact PII)
+    match /results/{analysisCode} {
+      allow get: if isValidAnalysisCode(analysisCode);
+      allow list: if isAdmin();
+      allow create: if isAdmin() && isValidAnalysisCode(analysisCode) && isValidLabResult(incoming()) &&
+        incoming().analysisCode == analysisCode &&
+        incoming().createdBy == request.auth.uid &&
+        incoming().createdAt == request.time &&
+        incoming().updatedAt == request.time;
+      allow update: if isAdmin() && isValidAnalysisCode(analysisCode) && isValidLabResult(incoming()) &&
+        incoming().analysisCode == existing().analysisCode &&
+        incoming().createdBy == existing().createdBy &&
+        incoming().createdAt == existing().createdAt &&
+        incoming().updatedAt == request.time &&
+        incoming().diff(existing()).affectedKeys().hasOnly([
+          'patientName',
+          'testName',
+          'testCategory',
+          'testDate',
+          'status',
+          'estimatedCompletion',
+          'pdfDataUrl',
+          'pdfFileName',
+          'clinicalSummary',
+          'updatedAt'
+        ]);
+      allow delete: if isAdmin() && isValidAnalysisCode(analysisCode);
+    }
+
+    // C. Isolated Patient Contact PII for WhatsApp Result Dispatch (Admin-Only Split Collection)
+    match /result_contacts/{analysisCode} {
+      allow get: if isAdmin() && isValidAnalysisCode(analysisCode);
+      allow list: if isAdmin();
+      allow create: if isAdmin() && isValidAnalysisCode(analysisCode) && isValidResultContact(incoming()) &&
+        incoming().analysisCode == analysisCode &&
+        incoming().createdBy == request.auth.uid &&
+        incoming().createdAt == request.time &&
+        incoming().updatedAt == request.time &&
+        existsAfter(/databases/$(database)/documents/results/$(analysisCode));
+      allow update: if isAdmin() && isValidAnalysisCode(analysisCode) && isValidResultContact(incoming()) &&
+        incoming().analysisCode == existing().analysisCode &&
+        incoming().createdBy == existing().createdBy &&
+        incoming().createdAt == existing().createdAt &&
+        incoming().updatedAt == request.time &&
+        incoming().diff(existing()).affectedKeys().hasOnly([
+          'patientPhone',
+          'notes',
+          'updatedAt'
+        ]);
+      allow delete: if isAdmin() && isValidAnalysisCode(analysisCode);
+    }
+
+    // D. Home Sample Collection Requests (Owner or Admin Only)
+    match /home_requests/{requestId} {
+      allow get: if isVerifiedUser() && isValidId(requestId) && (existing().requesterId == request.auth.uid || isAdmin());
+      allow list: if isVerifiedUser() && (existing().requesterId == request.auth.uid || isAdmin());
+      allow create: if isVerifiedUser() && isValidId(requestId) && isValidHomeRequest(incoming()) &&
+        incoming().requestId == requestId &&
+        incoming().requesterId == request.auth.uid &&
+        incoming().status == 'new' &&
+        incoming().createdAt == request.time &&
+        incoming().updatedAt == request.time;
+      allow update: if isVerifiedUser() && isValidId(requestId) && isValidHomeRequest(incoming()) &&
+        incoming().requestId == existing().requestId &&
+        incoming().requesterId == existing().requesterId &&
+        incoming().createdAt == existing().createdAt &&
+        incoming().updatedAt == request.time && (
+          (isAdmin() && incoming().diff(existing()).affectedKeys().hasOnly([
+            'status',
+            'notes',
+            'preferredDate',
+            'preferredTimeSlot',
+            'updatedAt'
+          ])) ||
+          (existing().requesterId == request.auth.uid &&
+            !(existing().status in ['completed', 'cancelled']) &&
+            incoming().status == 'cancelled' &&
+            incoming().diff(existing()).affectedKeys().hasOnly(['status', 'updatedAt']))
+        );
+      allow delete: if isAdmin() && isValidId(requestId);
+    }
+  }
+}

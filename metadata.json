@@ -1,0 +1,6 @@
+{
+  "name": "معامل الحياة للتحاليل الطبية | Life Labs Mansoura",
+  "description": "البوابة الإلكترونية الرسمية لمعامل الحياة للتحاليل الطبية بالمنصورة - الاستعلام عن نتائج التحاليل برقم التحليل، حجز سحب العينات المنزلي، ودليل التحاليل وشروط الفحص.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
